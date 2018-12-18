@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nicholas Johnson personal website Application Loab Balancer
+Parameters:
+  ALBName:
+    Type: String
+    Default: Azorahai-ALB
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: "subnet-a497b7f9, subnet-7428055b, subnet-07f6ad38"
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-df6fdba4
+
+Resources:
+  AzorALB:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties: 
+      Scheme: internal
+      LoadBalancerAttributes:
+        -
+          Key: deletion_protection.enabled
+          Value: true
+      Name: !Ref ALBName
+      Subnets: !Ref Subnets
+      Tags:
+        -
+          Key: Name
+          Value: "Azor ALB"
+        - 
+          Key: Project
+          Value: "AzorAhai"
+  AzorALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: AzorALBTargetGroup
+      LoadBalancerArn: !Ref AzorALB
+      Port: 80
+      Protocol: HTTP
+  AzorALBTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 80
+      HealthCheckIntervalSeconds: 10
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Name: AzorAhaiTargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      Tags:
+        - Key: Name
+          Value: "Azor TargetGroup"
+        - Key: Project
+          Value: "AzorAhai"
+      VpcId: !Ref VpcId
+
+
+Outputs:
+  LoadBalancerDomain:
+    Description: DNS Name of AzorAhai ALB
+    Value: !GetAtt [AzorALB, DNSName]
+    Export:
+      Name: !Sub 'AzorAhai-DNSName'
+  AzorAhaiHostedZoneId:
+    Description: Hosted Zone of the AzorAhai Load Balancer
+    Value: !GetAtt [AzorALB, CanonicalHostedZoneID]
+    Export:
+      Name: !Sub 'AzorAhai-CanonicalHostedZoneID'
+  ALBTargetGroupARN:
+    Description: ARN for the PGP's NLB Target Group
+    Value: !Ref AzorALBTargetGroup
+    Export:
+      Name: !Sub 'AzorAhai-ALBTargetGroup-ARN'
+
